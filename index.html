@@ -223,22 +223,22 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" placeholder="Your first name">
+                    <input type="text" id="firstName" placeholder="Your first name" required>
                 </div>
                 <div class="form-group">
                     <label for="lastName">Last Name</label>
-                    <input type="text" id="lastName" placeholder="Your last name">
+                    <input type="text" id="lastName" placeholder="Your last name" required>
                 </div>
             </div>
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="Your email address">
+                <input type="email" id="email" placeholder="Your email address" required>
             </div>
             <div class="form-group">
                 <label for="message">Your Message</label>
-                <textarea id="message" placeholder="How can we help you?"></textarea>
+                <textarea id="message" placeholder="How can we help you?" required></textarea>
             </div>
-            <button class="submit-btn">SEND MESSAGE <i class="fas fa-paper-plane"></i></button>
+            <button class="submit-btn" onclick="sendEmail()">SEND MESSAGE <i class="fas fa-paper-plane"></i></button>
         </div>
     </section>
     
@@ -279,126 +279,202 @@
     </footer>
 
     <!-- Load script for interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sections = document.querySelectorAll('section[id]');
-        const navLinks = document.querySelectorAll('nav ul li a');
-        const footerLinks = document.querySelectorAll('.footer-links a[href^="#"]');
-        const hamburger = document.querySelector('.hamburger');
-        const navMenu = document.querySelector('nav ul');
-        const body = document.body;
-        
-        // Mobile menu toggle
-        hamburger.addEventListener('click', function() {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-            body.classList.toggle('body-scroll-lock');
-        });
-        
-        // Close mobile menu when clicking a link
-        navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                body.classList.remove('body-scroll-lock');
-            });
-        });
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (navMenu.classList.contains('active') && 
-                !navMenu.contains(e.target) && 
-                !hamburger.contains(e.target)) {
-                hamburger.classList.remove('active');
-                navMenu.classList.remove('active');
-                body.classList.remove('body-scroll-lock');
-            }
-        });
-        
-        // Set initial active state based on URL hash
-        function setInitialActive() {
-            const hash = window.location.hash;
-            if (hash) {
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === hash) {
-                        link.classList.add('active');
-                    }
-                });
-            } else {
-                // If no hash, set the Solutions as active by default
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === '#solutions') {
-                        link.classList.add('active');
-                    }
-                });
-            }
-        }
-        
-        // Run initial setup
-        setInitialActive();
-        
-        function highlightNavigation() {
-            let scrollY = window.pageYOffset;
-            let currentActive = null;
+        // Get QR Code ID from URL if exists - Moved outside DOMContentLoaded
+        function getQRCodeId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
             
-            sections.forEach(current => {
-                const sectionHeight = current.offsetHeight;
-                const sectionTop = current.offsetTop - 100;
-                const sectionId = current.getAttribute('id');
-                
-                if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-                    currentActive = '#' + sectionId;
+            // Check if we're in a file path that contains the ID
+            if (!id) {
+                const pathParts = window.location.pathname.split('/');
+                const lastPart = pathParts[pathParts.length - 1];
+                if (lastPart && lastPart.match(/^\d+$/)) {
+                    return lastPart;
+                }
+            }
+            
+            return id || 'Direct Visit';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('nav ul li a');
+            const footerLinks = document.querySelectorAll('.footer-links a[href^="#"]');
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('nav ul');
+            const body = document.body;
+            
+            // Initialize EmailJS
+            emailjs.init("7n_CagB1xIbXj7VA_");
+            
+            // Check for ID in URL and handle it
+            const qrCodeId = getQRCodeId();
+            if (qrCodeId !== 'Direct Visit') {
+                // Scroll to contact form
+                const contactSection = document.querySelector('#contact');
+                if (contactSection) {
+                    window.scrollTo({
+                        top: contactSection.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+
+                // Pre-fill the message
+                const messageField = document.getElementById('message');
+                if (messageField) {
+                    messageField.value = `${qrCodeId} ID'li trash can'da sorun var.`;
+                }
+            }
+            
+            // Mobile menu toggle
+            hamburger.addEventListener('click', function() {
+                hamburger.classList.toggle('active');
+                navMenu.classList.toggle('active');
+                body.classList.toggle('body-scroll-lock');
+            });
+            
+            // Close mobile menu when clicking a link
+            navLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                    body.classList.remove('body-scroll-lock');
+                });
+            });
+            
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (navMenu.classList.contains('active') && 
+                    !navMenu.contains(e.target) && 
+                    !hamburger.contains(e.target)) {
+                    hamburger.classList.remove('active');
+                    navMenu.classList.remove('active');
+                    body.classList.remove('body-scroll-lock');
                 }
             });
             
-            if (currentActive) {
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === currentActive) {
-                        link.classList.add('active');
-                    }
-                });
-            }
-        }
-        
-        window.addEventListener('scroll', highlightNavigation);
-        
-        // Add smooth scrolling to navigation links
-        function scrollToSection(e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href');
-            const targetSection = document.querySelector(targetId);
-            
-            if (targetSection) {
-                window.scrollTo({
-                    top: targetSection.offsetTop - 80,
-                    behavior: 'smooth'
-                });
-                
-                // Update URL hash without jumping
-                history.pushState(null, null, targetId);
-                
-                // Remove active class from all links and add to clicked link
-                navLinks.forEach(navLink => navLink.classList.remove('active'));
-                if (this.parentElement.parentElement.classList.contains('nav')) {
-                    this.classList.add('active');
+            // Set initial active state based on URL hash
+            function setInitialActive() {
+                const hash = window.location.hash;
+                if (hash) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === hash) {
+                            link.classList.add('active');
+                        }
+                    });
+                } else {
+                    // If no hash, set the Solutions as active by default
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '#solutions') {
+                            link.classList.add('active');
+                        }
+                    });
                 }
             }
+            
+            // Run initial setup
+            setInitialActive();
+            
+            function highlightNavigation() {
+                let scrollY = window.pageYOffset;
+                let currentActive = null;
+                
+                sections.forEach(current => {
+                    const sectionHeight = current.offsetHeight;
+                    const sectionTop = current.offsetTop - 100;
+                    const sectionId = current.getAttribute('id');
+                    
+                    if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+                        currentActive = '#' + sectionId;
+                    }
+                });
+                
+                if (currentActive) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === currentActive) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            }
+            
+            window.addEventListener('scroll', highlightNavigation);
+            
+            // Add smooth scrolling to navigation links
+            function scrollToSection(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+                
+                if (targetSection) {
+                    window.scrollTo({
+                        top: targetSection.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Update URL hash without jumping
+                    history.pushState(null, null, targetId);
+                    
+                    // Remove active class from all links and add to clicked link
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    if (this.parentElement.parentElement.classList.contains('nav')) {
+                        this.classList.add('active');
+                    }
+                }
+            }
+            
+            // Apply smooth scrolling to all navigation links
+            navLinks.forEach(link => {
+                link.addEventListener('click', scrollToSection);
+            });
+            
+            // Apply smooth scrolling to footer quick links
+            footerLinks.forEach(link => {
+                link.addEventListener('click', scrollToSection);
+            });
+        });
+
+        // Email sending function
+        function sendEmail() {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            const qrCodeId = getQRCodeId();
+
+            if (!firstName || !lastName || !email || !message) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const templateParams = {
+                to_email: 'amemmedov35@std.beu.edu.az',
+                from_name: `${firstName} ${lastName}`,
+                from_email: email,
+                message: message,
+                qr_code_id: qrCodeId,
+                report_time: new Date().toLocaleString('tr-TR'),
+                location: 'Baku Engineering University, Khirdalan'
+            };
+
+            emailjs.send('service_o8qitlf', 'template_u959wut', templateParams)
+                .then(function(response) {
+                    alert('Message sent successfully!');
+                    document.getElementById('firstName').value = '';
+                    document.getElementById('lastName').value = '';
+                    document.getElementById('email').value = '';
+                    document.getElementById('message').value = '';
+                }, function(error) {
+                    alert('Failed to send message. Please try again later.');
+                    console.error('Error:', error);
+                });
         }
-        
-        // Apply smooth scrolling to all navigation links
-        navLinks.forEach(link => {
-            link.addEventListener('click', scrollToSection);
-        });
-        
-        // Apply smooth scrolling to footer quick links
-        footerLinks.forEach(link => {
-            link.addEventListener('click', scrollToSection);
-        });
-    });
     </script>
 </body>
 </html> 
