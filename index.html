@@ -238,6 +238,9 @@
                 <label for="message">Your Message</label>
                 <textarea id="message" placeholder="How can we help you?" required></textarea>
             </div>
+            <div class="form-group">
+                <div class="g-recaptcha" data-sitekey="6LdOU0MrAAAAALYJEqsYXBTDf-dKOrJH1-0DzS3M"></div>
+            </div>
             <button class="submit-btn" onclick="sendEmail()">SEND MESSAGE <i class="fas fa-paper-plane"></i></button>
         </div>
     </section>
@@ -280,13 +283,62 @@
 
     <!-- Load script for interactivity -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
-        // Get QR Code ID from URL if exists - Moved outside DOMContentLoaded
+        // Rate limiting and security measures
+        const RATE_LIMIT = {
+            maxAttempts: 2,
+            timeWindow: 3600000, // 1 hour in milliseconds
+            attempts: {}
+        };
+
+        function checkRateLimit(email) {
+            const now = Date.now();
+            if (!RATE_LIMIT.attempts[email]) {
+                RATE_LIMIT.attempts[email] = {
+                    count: 0,
+                    firstAttempt: now
+                };
+            }
+
+            const userAttempts = RATE_LIMIT.attempts[email];
+            
+            // Reset if time window has passed
+            if (now - userAttempts.firstAttempt > RATE_LIMIT.timeWindow) {
+                userAttempts.count = 0;
+                userAttempts.firstAttempt = now;
+            }
+
+            // Check if user has exceeded rate limit
+            if (userAttempts.count >= RATE_LIMIT.maxAttempts) {
+                const timeLeft = Math.ceil((RATE_LIMIT.timeWindow - (now - userAttempts.firstAttempt)) / 60000);
+                throw new Error(`Rate limit exceeded. Please try again in ${timeLeft} minutes.`);
+            }
+
+            userAttempts.count++;
+        }
+
+        // Input validation
+        function validateInput(input) {
+            // Remove any HTML tags and scripts
+            return input.replace(/<[^>]*>/g, '');
+        }
+
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validateName(name) {
+            // Only allow letters, spaces, and basic punctuation
+            return /^[a-zA-ZğüşıöçĞÜŞİÖÇ\s\-']{2,50}$/.test(name);
+        }
+
+        // Get QR Code ID from URL if exists
         function getQRCodeId() {
             const urlParams = new URLSearchParams(window.location.search);
             const id = urlParams.get('id');
             
-            // Check if we're in a file path that contains the ID
             if (!id) {
                 const pathParts = window.location.pathname.split('/');
                 const lastPart = pathParts[pathParts.length - 1];
@@ -438,42 +490,82 @@
             footerLinks.forEach(link => {
                 link.addEventListener('click', scrollToSection);
             });
+
+            // Add input validation listeners
+            const inputs = document.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.value = validateInput(this.value);
+                });
+            });
         });
 
-        // Email sending function
+        // Email sending function with security measures
         function sendEmail() {
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
-            const message = document.getElementById('message').value;
-            const qrCodeId = getQRCodeId();
+            try {
+                const firstName = validateInput(document.getElementById('firstName').value);
+                const lastName = validateInput(document.getElementById('lastName').value);
+                const email = validateInput(document.getElementById('email').value);
+                const message = validateInput(document.getElementById('message').value);
+                const qrCodeId = getQRCodeId();
 
-            if (!firstName || !lastName || !email || !message) {
-                alert('Please fill in all fields');
-                return;
+                // Validate inputs
+                if (!firstName || !lastName || !email || !message) {
+                    throw new Error('Please fill in all fields');
+                }
+
+                if (!validateName(firstName) || !validateName(lastName)) {
+                    throw new Error('Please enter valid names (only letters, spaces, and basic punctuation)');
+                }
+
+                if (!validateEmail(email)) {
+                    throw new Error('Please enter a valid email address');
+                }
+
+                if (message.length < 10) {
+                    throw new Error('Message must be at least 10 characters long');
+                }
+
+                if (message.length > 1000) {
+                    throw new Error('Message must not exceed 1000 characters');
+                }
+
+                // Check rate limit
+                checkRateLimit(email);
+
+                // Verify reCAPTCHA
+                const recaptchaResponse = grecaptcha.getResponse();
+                if (!recaptchaResponse) {
+                    throw new Error('Please complete the reCAPTCHA verification');
+                }
+
+                const templateParams = {
+                    to_email: 'amemmedov35@std.beu.edu.az',
+                    from_name: `${firstName} ${lastName}`,
+                    from_email: email,
+                    message: message,
+                    qr_code_id: qrCodeId,
+                    report_time: new Date().toLocaleString('tr-TR'),
+                    location: 'Baku Engineering University, Khirdalan',
+                    ip_address: '{{ip_address}}', // Will be replaced by EmailJS
+                    user_agent: navigator.userAgent
+                };
+
+                emailjs.send('service_o8qitlf', 'template_u959wut', templateParams)
+                    .then(function(response) {
+                        alert('Message sent successfully!');
+                        document.getElementById('firstName').value = '';
+                        document.getElementById('lastName').value = '';
+                        document.getElementById('email').value = '';
+                        document.getElementById('message').value = '';
+                        grecaptcha.reset();
+                    }, function(error) {
+                        throw new Error('Failed to send message. Please try again later.');
+                    });
+            } catch (error) {
+                alert(error.message);
+                console.error('Error:', error);
             }
-
-            const templateParams = {
-                to_email: 'amemmedov35@std.beu.edu.az',
-                from_name: `${firstName} ${lastName}`,
-                from_email: email,
-                message: message,
-                qr_code_id: qrCodeId,
-                report_time: new Date().toLocaleString('tr-TR'),
-                location: 'Baku Engineering University, Khirdalan'
-            };
-
-            emailjs.send('service_o8qitlf', 'template_u959wut', templateParams)
-                .then(function(response) {
-                    alert('Message sent successfully!');
-                    document.getElementById('firstName').value = '';
-                    document.getElementById('lastName').value = '';
-                    document.getElementById('email').value = '';
-                    document.getElementById('message').value = '';
-                }, function(error) {
-                    alert('Failed to send message. Please try again later.');
-                    console.error('Error:', error);
-                });
         }
     </script>
 </body>
