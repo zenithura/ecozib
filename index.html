@@ -239,7 +239,12 @@
                 <textarea id="message" placeholder="How can we help you?" required></textarea>
             </div>
             <div class="form-group">
-                <div class="g-recaptcha" data-sitekey="6LdOU0MrAAAAAALYJEqsYXBTDf-dKOrJH1-0DzS3M"></div>
+                <div class="g-recaptcha" 
+                     data-sitekey="6LdOU0MrAAAAALYJEqsYXBTDf-dKOrJH1-0DzS3M"
+                     data-callback="onRecaptchaLoad"
+                     data-expired-callback="onRecaptchaExpired"
+                     data-error-callback="onRecaptchaError">
+                </div>
             </div>
             <button class="submit-btn" onclick="sendEmail()">SEND MESSAGE <i class="fas fa-paper-plane"></i></button>
         </div>
@@ -283,8 +288,13 @@
 
     <!-- Load script for interactivity -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
     <script>
+        // reCAPTCHA callback
+        function onRecaptchaLoad() {
+            console.log('reCAPTCHA loaded');
+        }
+
         // Rate limiting and security measures
         const RATE_LIMIT = {
             maxAttempts: 2,
@@ -539,6 +549,12 @@
                     throw new Error('Please complete the reCAPTCHA verification');
                 }
 
+                // Show loading state
+                const submitButton = document.querySelector('.submit-btn');
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = 'SENDING... <i class="fas fa-spinner fa-spin"></i>';
+                submitButton.disabled = true;
+
                 const templateParams = {
                     to_email: 'amemmedov35@std.beu.edu.az',
                     from_name: `${firstName} ${lastName}`,
@@ -547,7 +563,7 @@
                     qr_code_id: qrCodeId,
                     report_time: new Date().toLocaleString('tr-TR'),
                     location: 'Baku Engineering University, Khirdalan',
-                    ip_address: '{{ip_address}}', // Will be replaced by EmailJS
+                    ip_address: '{{ip_address}}',
                     user_agent: navigator.userAgent
                 };
 
@@ -559,13 +575,29 @@
                         document.getElementById('email').value = '';
                         document.getElementById('message').value = '';
                         grecaptcha.reset();
+                        submitButton.innerHTML = originalText;
+                        submitButton.disabled = false;
                     }, function(error) {
                         throw new Error('Failed to send message. Please try again later.');
                     });
             } catch (error) {
                 alert(error.message);
                 console.error('Error:', error);
+                const submitButton = document.querySelector('.submit-btn');
+                submitButton.innerHTML = 'SEND MESSAGE <i class="fas fa-paper-plane"></i>';
+                submitButton.disabled = false;
             }
+        }
+
+        // reCAPTCHA error handling
+        function onRecaptchaExpired() {
+            console.log('reCAPTCHA expired');
+            grecaptcha.reset();
+        }
+
+        function onRecaptchaError() {
+            console.error('reCAPTCHA error occurred');
+            alert('reCAPTCHA verification failed. Please refresh the page and try again.');
         }
     </script>
 </body>
