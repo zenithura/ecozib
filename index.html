@@ -238,14 +238,6 @@
                 <label for="message">Your Message</label>
                 <textarea id="message" placeholder="How can we help you?" required></textarea>
             </div>
-            <div class="form-group">
-                <div class="g-recaptcha" 
-                     data-sitekey="6LdOU0MrAAAAALYJEqsYXBTDf-dKOrJH1-0DzS3M"
-                     data-callback="onRecaptchaLoad"
-                     data-expired-callback="onRecaptchaExpired"
-                     data-error-callback="onRecaptchaError">
-                </div>
-            </div>
             <button class="submit-btn" onclick="sendEmail()">SEND MESSAGE <i class="fas fa-paper-plane"></i></button>
         </div>
     </section>
@@ -288,13 +280,7 @@
 
     <!-- Load script for interactivity -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
     <script>
-        // reCAPTCHA callback
-        function onRecaptchaLoad() {
-            console.log('reCAPTCHA loaded');
-        }
-
         // Rate limiting and security measures
         const RATE_LIMIT = {
             maxAttempts: 2,
@@ -543,12 +529,6 @@
                 // Check rate limit
                 checkRateLimit(email);
 
-                // Verify reCAPTCHA
-                const recaptchaResponse = grecaptcha.getResponse();
-                if (!recaptchaResponse) {
-                    throw new Error('Please complete the reCAPTCHA verification');
-                }
-
                 // Show loading state
                 const submitButton = document.querySelector('.submit-btn');
                 const originalText = submitButton.innerHTML;
@@ -574,7 +554,6 @@
                         document.getElementById('lastName').value = '';
                         document.getElementById('email').value = '';
                         document.getElementById('message').value = '';
-                        grecaptcha.reset();
                         submitButton.innerHTML = originalText;
                         submitButton.disabled = false;
                     }, function(error) {
@@ -587,17 +566,6 @@
                 submitButton.innerHTML = 'SEND MESSAGE <i class="fas fa-paper-plane"></i>';
                 submitButton.disabled = false;
             }
-        }
-
-        // reCAPTCHA error handling
-        function onRecaptchaExpired() {
-            console.log('reCAPTCHA expired');
-            grecaptcha.reset();
-        }
-
-        function onRecaptchaError() {
-            console.error('reCAPTCHA error occurred');
-            alert('reCAPTCHA verification failed. Please refresh the page and try again.');
         }
     </script>
 </body>
