@@ -24,7 +24,7 @@ The website now uses a simplified structure:
 
 ## Running the Site
 
-Simply open [`https://www.ecozib.online/`](https://www.ecozib.online) in any web browser. No server is needed.
+Simply open [`https://www.ecozib.online`](https://www.ecozib.online) in any web browser. No server is needed.
 
 ## Advantages of This Structure
 
