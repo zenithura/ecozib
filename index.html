@@ -37,7 +37,7 @@
             <div class="section-label">WHO WE ARE</div>
             <h1>The Future of Waste Management is Smart.</h1>
             <p>As cities grow and sustainability becomes urgent, EcoZib helps solve one of the biggest urban challenges - waste management. Our IoT-based system detects fill levels and alerts staff in real time, making waste collection efficient, clean and sustainable.</p>
-            <a href="#features" class="btn">Explore Features <i class="fas fa-arrow-right"></i></a>
+            <a href="#" class="btn" onclick="downloadAPK()">INSTALL APP <i class="fas fa-download"></i></a>
         </div>
         <div class="hero-image">
             <img src="images/robot.png" alt="Smart Waste Management Robot">
@@ -564,6 +564,37 @@
                 submitButton.disabled = false;
             }
         }
+        
+        // APK Download Function
+        function downloadAPK() {
+            // APK dosyasının URL'si - Bu URL'yi kendi APK dosyanızın linkiyle değiştirin
+            const apkUrl = 'https://github.com/zenithura/ecozib/ecozib-app.apk';
+            
+            // Alternatif olarak, dosya yerel sunucunuzda ise:
+            // const apkUrl = './app/ecozib-app.apk';
+            
+            try {
+                // Yeni bir link elementi oluştur
+                const link = document.createElement('a');
+                link.href = apkUrl;
+                link.download = 'EcoZib-App.apk'; // İndirilen dosyanın adı
+                link.target = '_blank';
+                
+                // Link'i DOM'a ekle ve tıkla
+                document.body.appendChild(link);
+                link.click();
+                
+                // Link'i DOM'dan kaldır
+                document.body.removeChild(link);
+                
+                // Kullanıcıya bilgi ver
+                alert('APK dosyası indiriliyor... İndirme tamamlandıktan sonra "Bilinmeyen Kaynaklardan" yüklemeyi etkinleştirmeyi unutmayın.');
+                
+            } catch (error) {
+                console.error('APK indirme hatası:', error);
+                alert('APK dosyası indirilemedi. Lütfen daha sonra tekrar deneyin.');
+            }
+        }
     </script>
 </body>
-</html> 
+</html>
